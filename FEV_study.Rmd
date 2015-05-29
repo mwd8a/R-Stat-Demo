@@ -1,0 +1,200 @@
+---
+title: "Analysis of FEV Data Set"
+author: "Michael Williams"
+date: "May 28, 2015"
+output: pdf_document
+---
+
+\section{Overview}
+
+The accompanying R code gives a demonstration of data manipulation, graphics, and statistical procedures. The outputs contain data displays (histograms, boxplots, scatterplots) and statistical analysis (categorical data analysis, tTest for comparison of means, linear regression).  
+
+The data correspond to the following variables and descriptions.  
+
+* **id** for *Identification Number*  
+*  **age** for *Age* (in years)  
+*  **fev** for *Forced Expiratory Volume* (in liters)  
+*  **height** for *Height* (in inches)  
+*  **sex** for *Sex* ('male' or 'female')  
+*  **smoke** for *Smoking Status* ('non-current smoker' or 'current smoker')  
+
+The data was obtained from B. Rosner's book *Introduction to Biostatistics*.
+
+\section{Exploratory Analysis of FEV}
+
+In this section, we explore the data by producing summary statistics and insightful graphics. For the graphics, the ggplot2 package will be used.
+
+```{r}
+library(ggplot2)
+```
+
+Load the FEV data set via 
+```{r}
+load(url('http://biostat.mc.vanderbilt.edu/wiki/pub/Main/DataSets/FEV.sav')) 
+```
+
+The first six rows of FEV.
+```{r}
+head(FEV) 
+```
+
+Summary statistics for all variables.
+```{r}
+summary(FEV)
+```
+
+Scatter plot of fev by age with smoke indicated.
+```{r}
+plot1 <- ggplot(FEV, aes(x=age, y=fev, colour=smoke)) + geom_point()
+plot1 <- plot1 + labs(x="Age", y="Forced Expiratory Volume", 
+                      title="FEV by Age with Indicated Smoking Status")
+plot1
+```
+
+It will be useful to find out the age of the youngest male smokers.
+```{r}
+summary(
+        subset(
+                FEV,
+                subset = smoke=="current smoker" & sex=="male",
+                select = age
+               )
+        )
+```
+
+We do the same for the female smokers.
+```{r}
+summary(
+        subset(
+                FEV,
+                subset = smoke=="current smoker" & sex=="female",
+                select = age
+               )
+        )
+```
+
+Create a contingency table for smoke by sex.
+```{r}
+cats <- subset(FEV, select = c(sex,smoke))
+tcats <- table(cats)
+tcats
+```
+
+The code `prop.table(tcats, margin=1)` gives proporitons by sex.
+```{r}
+prop.table(tcats, margin=1)
+```
+
+Use a chi-square test for proportions without Yates correction.
+```{r}
+chisq.test(tcats, correct=FALSE)
+```
+
+Boxplot of fev by smoke and sex.
+```{r}
+plot2 <- ggplot(FEV, aes(smoke, fev)) + geom_boxplot(aes(fill = sex)) 
+plot2 <- plot2 + labs(title="Boxplots of fev by smoke for each gender")
+plot2
+```
+
+Finally, we give a linear regression model of the response variable fev and predictor variables age, height, sex, and smoke.
+
+```{r}
+fit <- lm(fev ~ age + height + sex + smoke, data=FEV)
+summary(fit)
+```
+
+\section{FEV Restricted to Teenagers}
+
+In this section, we restrict the FEV data set to teenagers, that is, those subjects age 13 to 19. This restricted data set is called FEV2.
+
+```{r}
+FEV2 <- subset(FEV, subset = age>= 13)
+```
+
+Scatterplot of fev by age with smoke coding.
+```{r}
+plot3 <- ggplot(FEV2, aes(x=age, y=fev, colour=smoke)) + geom_point()
+plot3 <- plot3 + labs(x="Age", y="Forced Expiratory Volume", 
+                      title="FEV by Age with Indicated Smoking Status\nAge 13+")
+plot3
+```
+
+A table for smoke status by sex.
+```{r}
+cats2 <- subset(FEV2, select = c(sex,smoke))
+tcats2 <- table(cats2)
+tcats2
+```
+
+The code `prop.table(tcats2, 1)` gives proporitons by sex.
+```{r}
+prop.table(tcats2, 1)
+```
+
+Use a chi-square test for proportions without Yates correction.
+```{r}
+chisq.test(tcats2, correct=FALSE)
+```
+
+Boxplot of FEV by smoke and sex.
+```{r}
+plot4 <- ggplot(FEV2, aes(smoke, fev)) + geom_boxplot(aes(fill = sex)) 
+plot4 <- plot4 + labs(title="Boxplots of FEV by smoke and sex\nAge 13+")
+plot4
+```
+
+Histogram of fev for males.
+```{r}
+plot5 <- ggplot(subset(FEV2, subset = sex == "male"), 
+                aes(fev)) + geom_histogram()
+plot5 <- plot5 + labs(x="Forced Expiratory Volume", 
+                      title="fev for Males\nAge 13+")
+plot5
+```
+
+Histogram of fev for females.
+```{r}
+plot6 <- ggplot(subset(FEV2, subset = sex == "female"),
+                aes(fev)) + geom_histogram()
+plot6 <- plot6 + labs(x="Forced Expiratory Volume", 
+                      title="fev for Females\nAge 13+")
+plot6
+```
+
+t-test for fev by sex.
+```{r}
+t.test(fev ~ sex, data = FEV2)
+```
+
+Split-up the data set FEV2 by sex
+```{r}
+FEV2m <- subset(FEV2, subset = sex == "male")
+FEV2f <- subset(FEV2, subset = sex == "female")
+```
+
+t-test for fev by smoke.
+```{r}
+t.test(fev ~ smoke, data = FEV2m)
+```
+
+t-test for fev by smoke.
+```{r}
+t.test(fev ~ smoke, data = FEV2f)
+```
+
+scatterplot of fev by age with smoke coding for males.
+```{r}
+plot7 <- ggplot(FEV2m, aes(x=age, y=fev, colour=smoke)) + geom_point()
+plot7 <- plot7 + labs(x="Age", y="Forced Expiratory Volume", 
+                      title="FEV by Age with Indicated Smoking Status\nMales Age 13+")
+plot7
+```
+
+scatterplot of fev by age with smoke coding for females.
+```{r}
+plot8 <- ggplot(FEV2f, aes(x=age, y=fev, colour=smoke)) + geom_point()
+plot8 <- plot8 + labs(x="Age", y="Forced Expiratory Volume", 
+                      title="FEV by Age with Indicated Smoking Status\nFemales Age 13+")
+plot8
+```
